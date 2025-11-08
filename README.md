@@ -45,7 +45,7 @@ project_root/
 
 ### 1️⃣ Clone the repository
 ```bash
-git clone https://github.com/sheikhmunim/job_application_rag.git
+git clone https://github.com/sheikhmunim/rag-job-assistant.git
 cd job_application_rag
 ```
 
