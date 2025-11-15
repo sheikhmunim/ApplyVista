@@ -18,7 +18,9 @@ venv/
 # --- Data / Outputs ---
 data/outputs/
 data/job_rag/chroma_db/
+/data/chroma_db/
 data/job_rag/profile_docs/
+/**/chroma.sqlite3
 *.pdf
 *.txt
 *.md
