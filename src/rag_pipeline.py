@@ -369,12 +369,22 @@ Rules:
 """
 
 SYSTEM_COVER = """
-You are an expert cover-letter writer. Using the context:
-- Ground claims in [RETRIEVED_JD_SNIPPETS] and [RETRIEVED_PROFILE_SNIPPETS].
-- <=350 words, 3–5 short paragraphs + a 'Relevant Highlights' bullet list (3–5).
-- Quote exact JD terms where helpful. No invented experience.
-- Confident and specific; clear call-to-action.
+You are an expert cover-letter writer.
+
+Tone & Output Rules:
+- Professional, confident, warm, and human-sounding.
+- Do NOT include meta phrases such as “here is your cover letter,”
+  “as requested,” “below is the draft,” or any self-referential text.
+
+Content Rules:
+- Ground all claims strictly in [RETRIEVED_JD_SNIPPETS] and [RETRIEVED_PROFILE_SNIPPETS].
+- Length <= 350 words.
+- Structure: 3–5 short paragraphs + a 'Relevant Highlights' bullet list (3–5 bullets).
+- Quote exact JD wording when helpful.
+- No invented experience or exaggeration.
+- End with a clear, concise call-to-action.
 """
+
 
 SYSTEM_EMAILS = """
 Write three short emails tailored to the JD and candidate:
@@ -401,6 +411,93 @@ Keep to 80–120 words. Ground in [RETRIEVED_*]; no fabrications.
 """
 
 
+
+# SYSTEM_TOP_CHOICE = """
+# Write a short, sincere, human-sounding paragraph (not a letter) explaining:
+# 1) Why this role is the candidate’s top choice.
+# 2) Why the candidate is a strong fit.
+
+# Tone rules:
+# - Natural, warm, human.
+# - Professional and concise.
+# - No greetings, no sign-offs, no letter format.
+# - Single short paragraph only.
+# - Avoid exaggeration and generic filler phrases.
+# - Do NOT include meta phrases like “here is your message,” “as requested,” or any self-referencing commentary.
+
+# Technical rules:
+# - Length: 60–120 words.
+# - Must reference and ground claims in [RETRIEVED_JD_SNIPPETS] and [RETRIEVED_PROFILE_SNIPPETS].
+# - No invented experience. Use specific alignment points only.
+# """
+
+
+
+SYSTEM_TOP_CHOICE = """
+Write a short, sincere, human-sounding paragraph that answers ONLY these two questions:
+1) Why this role is the candidate’s top choice.
+2) Why the candidate is a strong fit.
+
+This is NOT a cover letter, NOT an email, and NOT an application.
+- Do NOT address a hiring manager.
+- Do NOT use greetings or sign-offs.
+- No letter format.
+
+Tone rules:
+- Natural, warm, human.
+- Professional and concise.
+- Single short paragraph only.
+- Avoid exaggeration and generic filler phrases.
+- Do NOT include meta phrases or self-referencing commentary.
+
+Technical rules:
+- Length: 60–120 words.
+- Must ground claims strictly in [RETRIEVED_JD_SNIPPETS] and [RETRIEVED_PROFILE_SNIPPETS].
+- No invented experience.
+"""
+
+
+
+SYSTEM_SHORT_RECRUITER_EMAIL = """
+Write a concise cold outreach email to a recruiter.
+
+Tone:
+- Professional, warm, human.
+- Short, confident, approachable.
+- No exaggeration or filler.
+
+Strict prohibitions:
+- NO meta phrases, explanations, or commentary 
+  (no “here are…”, “below is…”, “as requested…”, etc.).
+- NO letter format.
+- ONE single paragraph only.
+
+Requirements:
+- 40–70 words.
+- Style similar to: "I saw Opus is hiring..."
+- Email must briefly introduce who I am, what I do, and why I’m reaching out to connect.
+- Include 2–3 short subject line options.
+- Ground all claims strictly in [PROFILE] and [RETRIEVED_*].
+
+Hard rule:
+- Output ONLY the format below. No text before or after it.
+
+Format:
+=== Subject Options ===
+- ...
+- ...
+- ...
+=== Email ===
+...
+"""
+
+
+
+
+
+
+
+
 # ======================================================================
 # High-level generation helpers
 # ======================================================================
@@ -419,6 +516,13 @@ def gen_emails(context: str) -> str:
 
 def gen_ats(context: str) -> str:
     return run_prompt(SYSTEM_ATS, context)
+
+def gen_top_choice(context: str) -> str:
+    return run_prompt(SYSTEM_TOP_CHOICE, context)
+
+def gen_short_recruiter_email(context: str) -> str:
+    return run_prompt(SYSTEM_SHORT_RECRUITER_EMAIL, context)
+
 
 
 # ======================================================================
@@ -521,6 +625,9 @@ def generate_all_from_jd(jd_text: str, save_to_disk: bool = False) -> Dict[str, 
     cover_out = gen_cover(ctx)
     emails_out = gen_emails(ctx)
     ats_out = gen_ats(ctx)
+    top_choice_out = gen_top_choice(ctx)
+    short_recruiter_email_out = gen_short_recruiter_email(ctx)
+
 
     if save_to_disk:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -536,6 +643,12 @@ def generate_all_from_jd(jd_text: str, save_to_disk: bool = False) -> Dict[str, 
         (OUT_DIR / f"{ts}_ats_summary.md").write_text(
             ats_out, encoding="utf-8"
         )
+        (OUT_DIR / f"{ts}_top_choice_email.md").write_text(
+            top_choice_out, encoding="utf-8"
+        )
+        (OUT_DIR / f"{ts}_short_recruiter_email.md").write_text(
+            short_recruiter_email_out, encoding="utf-8"
+        )
 
     return {
         "context": ctx,
@@ -543,6 +656,8 @@ def generate_all_from_jd(jd_text: str, save_to_disk: bool = False) -> Dict[str, 
         "cover": cover_out,
         "emails": emails_out,
         "ats": ats_out,
+        "top_choice": top_choice_out,
+        "short_recruiter_email": short_recruiter_email_out,
         "jd_hard": jd_hard,
         "jd_soft": jd_soft,
         "keywords": keywords,
