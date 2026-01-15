@@ -28,7 +28,7 @@ os.environ["CHROMA_TELEMETRY"] = "false"
 # ----------------------------------------------------------------------
 # Project config (public)
 # ----------------------------------------------------------------------
-from config import (
+from .config import (
     PROFILE_DOC_DIR,
     RAG_DIR,
     CHROMA_DB_DIR,
@@ -42,7 +42,7 @@ from config import (
 
 # Optional private profile config (NOT committed to GitHub)
 try:
-    from profile_config import USER_PROFILE
+    from .profile_config import USER_PROFILE
 except ImportError:
     USER_PROFILE = None
 
@@ -60,7 +60,7 @@ from langchain_community.document_loaders import PyPDFLoader, TextLoader
 # ----------------------------------------------------------------------
 # Text + skill utilities
 # ----------------------------------------------------------------------
-from text_utils import (
+from .text_utils import (
     normalize_text,
     tokenize_lower,
     top_terms,
@@ -665,6 +665,26 @@ def generate_all_from_jd(jd_text: str, save_to_disk: bool = False) -> Dict[str, 
         "have_soft": have_soft,
         "gaps": gaps,
     }
+
+
+def run_jd_pipeline_api(jd_text: str) -> Dict[str, Any]:
+    """
+    Thin wrapper for FastAPI:
+    - takes raw JD text
+    - runs the full pipeline
+    - NEVER writes to disk
+    - returns exactly what generate_all_from_jd() returns
+    """
+    return generate_all_from_jd(jd_text=jd_text, save_to_disk=False)
+
+
+def simple_chat_api(message: str, k: int = TOP_K) -> str:
+    """
+    Wrapper around generate_answer() so the API can expose
+    a simple 'chat' endpoint using RAG over your profile docs.
+    """
+    return generate_answer(query=message, k=k)
+
 
 # Prevent ANY accidental code from running during import
 if __name__ != "__main__":
