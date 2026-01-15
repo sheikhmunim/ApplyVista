@@ -72,7 +72,7 @@ Ask personalized questions such as:
 ```bash
 git clone https://github.com/sheikhmunim/ApplyVista.git
 cd ApplyVista
-
+```
 ### 1️⃣ Clone the Repository
 
 python -m venv .venv
