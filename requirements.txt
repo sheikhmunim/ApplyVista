@@ -51,3 +51,15 @@ fpdf==1.7.2
 # Optional: FastAPI backend (only if you use it)
 fastapi==0.121.0
 uvicorn==0.38.0
+
+# LangGraph orchestration (pinned <1.0 to stay compatible with langchain 0.3.x)
+langgraph<1.0.0
+
+# Excel export
+openpyxl>=3.1.0
+
+# Job Scout
+duckduckgo-search>=6.0.0
+
+# Scheduler
+apscheduler>=3.10.0

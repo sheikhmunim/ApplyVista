@@ -523,7 +523,114 @@ def gen_top_choice(context: str) -> str:
 def gen_short_recruiter_email(context: str) -> str:
     return run_prompt(SYSTEM_SHORT_RECRUITER_EMAIL, context)
 
+# ======================================================================
+# Full pipeline for a optional JD
+# ======================================================================
+def generate_from_jd_with_options(
+    jd_text: str,
+    options: Optional[Dict[str, Any]] = None,
+    save_to_disk: bool = False
+) -> Dict[str, Any]:
+    """
+    Same pipeline as generate_all_from_jd(), but allows selectively generating outputs.
+    """
+    options = options or {}
 
+    gen_skills_flag = options.get("generate_skills", True)
+    gen_cover_flag = options.get("generate_cover", True)
+    gen_emails_flag = options.get("generate_emails", True)
+    gen_ats_flag = options.get("generate_ats", True)
+    gen_top_choice_flag = options.get("generate_top_choice", True)
+    gen_short_recruiter_flag = options.get("generate_short_recruiter_email", True)
+
+    if USER_PROFILE is None:
+        raise RuntimeError("USER_PROFILE is not set. Fill in profile_config.py locally.")
+
+    # 1) index JD + profile docs
+    index_profile_docs()
+    index_jd_text(jd_text)
+
+    # 2) retrieve focused snippets (keep same)
+    jd_focus = retrieve(
+        "List must-have requirements and responsibilities.",
+        k=6,
+        doc_type="jd",
+    )
+    profile_focus = retrieve(
+        "Find bullets that prove impact, results, metrics.",
+        k=6,
+        doc_type="profile",
+    )
+    rag_jd = format_docs(jd_focus)
+    rag_profile = format_docs(profile_focus)
+
+    # 3) keyword / skill extraction (keep same)
+    jd_norm = normalize_text(jd_text)
+    toks = tokenize_lower(jd_norm)
+    cands = top_terms(toks, topn=80, min_len=2)
+
+    jd_hard = fuzzy_match_candidates(cands, HARD_SKILL_LEXICON, cutoff=86)
+    jd_soft = fuzzy_match_candidates(cands, SOFT_SKILL_LEXICON, cutoff=86)
+
+    caps = sorted(set(re.findall(r"\b([A-Z][a-zA-Z0-9\-\+&/]{1,})\b", jd_text)))
+    hard_lower_map = {s.lower(): s for s in HARD_SKILL_LEXICON}
+    extra = fuzzy_match_candidates([c.lower() for c in caps], hard_lower_map.keys(), cutoff=90)
+    extra_cased = [hard_lower_map.get(e, e) for e in extra]
+    jd_hard = sorted({s for s in (set(jd_hard) | set(extra_cased)) if s})
+
+    known = {t.lower() for t in jd_hard + jd_soft}
+    keywords = [t for t in cands if t not in known and len(t) >= 3]
+
+    # 4) alignment summary (keep same)
+    have_hard = sorted({m[1] for m in fuzzy_overlap(USER_PROFILE["skills"], jd_hard, cutoff=88)})
+    have_soft = sorted({m[1] for m in fuzzy_overlap(USER_PROFILE["skills"], jd_soft, cutoff=88)})
+    gaps = [s for s in jd_hard + jd_soft if s not in set(have_hard + have_soft)]
+
+    # 5) build context once
+    ctx = build_context(
+        USER_PROFILE,
+        jd_text,
+        rag_jd,
+        rag_profile,
+        jd_hard,
+        jd_soft,
+        keywords,
+        have_hard,
+        have_soft,
+        gaps,
+    )
+
+    # 6) generate only requested outputs
+    result: Dict[str, Any] = {
+        "context": ctx,
+        "jd_hard": jd_hard,
+        "jd_soft": jd_soft,
+        "keywords": keywords,
+        "have_hard": have_hard,
+        "have_soft": have_soft,
+        "gaps": gaps,
+        "meta": {"options": options},
+    }
+
+    if gen_skills_flag:
+        result["skills"] = gen_skills(ctx)
+
+    if gen_cover_flag:
+        result["cover"] = gen_cover(ctx)
+
+    if gen_emails_flag:
+        result["emails"] = gen_emails(ctx)
+
+    if gen_ats_flag:
+        result["ats"] = gen_ats(ctx)
+
+    if gen_top_choice_flag:
+        result["top_choice"] = gen_top_choice(ctx)
+
+    if gen_short_recruiter_flag:
+        result["short_recruiter_email"] = gen_short_recruiter_email(ctx)
+
+    return result
 
 # ======================================================================
 # Full pipeline for a single JD
@@ -667,15 +774,9 @@ def generate_all_from_jd(jd_text: str, save_to_disk: bool = False) -> Dict[str, 
     }
 
 
-def run_jd_pipeline_api(jd_text: str) -> Dict[str, Any]:
-    """
-    Thin wrapper for FastAPI:
-    - takes raw JD text
-    - runs the full pipeline
-    - NEVER writes to disk
-    - returns exactly what generate_all_from_jd() returns
-    """
-    return generate_all_from_jd(jd_text=jd_text, save_to_disk=False)
+def run_jd_pipeline_api(jd_text: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    return generate_from_jd_with_options(jd_text=jd_text, options=options, save_to_disk=False)
+
 
 
 def simple_chat_api(message: str, k: int = TOP_K) -> str:
