@@ -18,9 +18,17 @@ jobs:
           python-version: "3.11"
 
       - run: pip install -r requirements.txt
-      - run: pytest
+      - name: Run tests
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          pytest
+          exit_code=$?
+          if [ $exit_code -eq 5 ]; then
+            echo "No tests collected yet - treating as pass"
+            exit 0
+          fi
+          exit $exit_code
 
   frontend:
     runs-on: ubuntu-latest
