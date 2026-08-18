@@ -35,7 +35,7 @@ CHROMA_DB_DIR.mkdir(parents=True, exist_ok=True)
 # ----------------------------------------------------------------------
 # MODEL SETTINGS
 # ----------------------------------------------------------------------
-MODEL_NAME = "llama3.2:3b"     # ollama model
+MODEL_NAME = "deepseek-chat"     # DeepSeek model
 EMBED_MODEL = "all-MiniLM-L6-v2"     # embedding model
 
 # ----------------------------------------------------------------------
