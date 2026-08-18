@@ -56,3 +56,6 @@ duckduckgo-search>=6.0.0
 
 # Scheduler
 apscheduler>=3.10.0
+
+# Testing
+pytest>=8.0.0
