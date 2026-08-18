@@ -18,6 +18,8 @@ jobs:
           python-version: "3.11"
 
       - run: pip install -r requirements.txt
+      - name: Download NLTK data
+        run: python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords'); nltk.download('punkt_tab')"
       - name: Run tests
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
