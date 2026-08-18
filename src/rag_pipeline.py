@@ -146,8 +146,13 @@ def load_docs_from(folder: Path, doc_type: str):
 def index_profile_docs() -> int:
     """
     Index your long-term profile docs (CV, project summaries) into Chroma.
+
+    Idempotent: clears any previously-indexed profile chunks first, so this
+    is safe to call on every request and correctly reflects edits to your
+    CV/docs instead of accumulating duplicate chunks forever.
     """
     vectordb = get_vectordb()
+    vectordb.delete(where={"doc_type": "profile"})
     docs = load_docs_from(PROFILE_DOC_DIR, "profile")
     chunks = splitter.split_documents(docs)
     if chunks:
@@ -159,6 +164,9 @@ def index_jd_text(jd_text: str) -> int:
     """
     Index the current job description as a temporary document.
     We write it as jd.txt under RAG_DIR.
+
+    Idempotent: clears any previously-indexed JD chunks first, so retrieval
+    can never leak content from an earlier, unrelated job description.
     """
     tmp = RAG_DIR / "jd.txt"
     tmp.write_text(jd_text, encoding="utf-8")
@@ -169,6 +177,7 @@ def index_jd_text(jd_text: str) -> int:
     chunks = splitter.split_documents(docs)
 
     vectordb = get_vectordb()
+    vectordb.delete(where={"doc_type": "jd"})
     if chunks:
         vectordb.add_documents(chunks)
     return len(chunks)
