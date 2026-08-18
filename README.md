@@ -80,9 +80,9 @@ It also discovers engineers at companies you're applying to via GitHub, and runs
 - Engineers tab shows a GitHub profile table + Excel download
 - `/scout` page shows job scout status, jobs table, and a manual trigger button
 
-### Local LLM (Fully Offline)
-- Powered by Ollama (Llama 3.2 3B by default)
-- No API keys, no cloud calls, no cost, 100% private
+### LLM
+- Powered by the DeepSeek API (`deepseek-chat` by default)
+- Requires a `DEEPSEEK_API_KEY`
 
 ---
 
@@ -95,7 +95,7 @@ It also discovers engineers at companies you're applying to via GitHub, and runs
 | **FastAPI** | Backend REST API |
 | **LangGraph** | Pipeline orchestration |
 | **LangChain** | RAG chains and prompt building |
-| **Ollama** | Local LLM runtime |
+| **DeepSeek API** | LLM (chat completions) |
 | **ChromaDB** | Vector store |
 | **SentenceTransformers** | Embeddings (all-MiniLM-L6-v2) |
 | **APScheduler** | Job scout scheduling |
@@ -164,12 +164,9 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Ollama
+### 3. DeepSeek API key
 
-```bash
-ollama pull llama3.2:3b
-ollama serve
-```
+Get an API key from [platform.deepseek.com](https://platform.deepseek.com) — you'll add it to `.env` in step 5.
 
 ### 4. Profile config
 
@@ -191,8 +188,8 @@ Edit `.env`:
 
 ```env
 # Required
-OLLAMA_HOST=http://localhost:11434
-LLM_MODEL=llama3.2:3b
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+DEEPSEEK_MODEL=deepseek-chat
 
 # Optional — GitHub engineer discovery
 GITHUB_TOKEN=ghp_your_token_here

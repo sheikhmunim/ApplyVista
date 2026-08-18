@@ -5,7 +5,7 @@ Core RAG logic for the Job Application Assistant.
 This module:
 - loads  profile documents
 - builds / loads a Chroma vector store
-- runs RAG using Ollama (Llama 3.2:3B or similar)
+- runs RAG using the DeepSeek chat API
 - builds rich context from JD + profile
 - generates skills, cover letter, emails, ATS summary
 """
@@ -20,8 +20,10 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 import torch
+from dotenv import load_dotenv
 
-import os
+load_dotenv()
+
 os.environ["ANONYMIZED_TELEMETRY"] = "false"
 os.environ["CHROMA_TELEMETRY"] = "false"
 
@@ -49,7 +51,7 @@ except ImportError:
 # ----------------------------------------------------------------------
 # LangChain / LLM stack
 # ----------------------------------------------------------------------
-from langchain_ollama import ChatOllama
+from langchain_deepseek import ChatDeepSeek
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.embeddings import SentenceTransformerEmbeddings
@@ -208,12 +210,12 @@ def cite_sources(docs) -> str:
 # LLM + low-level prompt runner
 # ======================================================================
 
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-LLM_MODEL = os.getenv("LLM_MODEL", MODEL_NAME)
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", MODEL_NAME)
 
-llm = ChatOllama(
-    base_url=OLLAMA_HOST,
-    model=LLM_MODEL,
+llm = ChatDeepSeek(
+    model=DEEPSEEK_MODEL,
+    api_key=DEEPSEEK_API_KEY,
     temperature=0.3,
 )
 parser = StrOutputParser()
